@@ -1,15 +1,10 @@
 import requests
 import pandas as pd
 from requests.auth import HTTPBasicAuth
-import os
-from dotenv import load_dotenv
 
-# Carregar variáveis de ambiente do arquivo .env
-load_dotenv()
-
-JIRA_URL = os.getenv("JIRA_URL")
-EMAIL = os.getenv("JIRA_EMAIL")
-API_TOKEN = os.getenv("JIRA_API_TOKEN")
+JIRA_URL = "https://carboncars.atlassian.net"
+EMAIL = ""
+API_TOKEN = ""
 
 # FILTRO JQL
 jql = 'project = MANTA AND status IN ("A Produzir", "Liberado Engenharia")'

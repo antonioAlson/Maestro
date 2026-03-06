@@ -1,10 +1,15 @@
 import requests
 import pandas as pd
 from requests.auth import HTTPBasicAuth
+from datetime import datetime
+from dotenv import load_dotenv
+import os
 
-JIRA_URL = "https://carboncars.atlassian.net"
-EMAIL = ""
-API_TOKEN = ""
+load_dotenv()
+
+JIRA_URL = os.getenv("JIRA_URL")
+EMAIL = os.getenv("EMAIL")
+API_TOKEN = os.getenv("API_TOKEN")
 
 # FILTRO JQL
 jql = 'project = MANTA AND status IN ("A Produzir", "Liberado Engenharia")'
@@ -29,7 +34,7 @@ while True:
             "status",
             "customfield_10039",   # SITUAÇÃO
             "customfield_11298",   # VEICULO
-            "customfield_11459"    # DT PREVISÃO ENTREGA
+            "customfield_10245"    # DT PREVISÃO ENTREGA
         ]
     }
 
@@ -71,6 +76,11 @@ while True:
             situacao = situacao_raw or ""
         print(f"DEBUG - Issue {key} - situacao final: {situacao}")
 
+        # Filtrar apenas situações desejadas
+        situacoes_validas = ["⚪️RECEBIDO ENCAMINHADO", "🟢RECEBIDO LIBERADO"]
+        if situacao not in situacoes_validas:
+            continue
+
         # VEICULO (dropdown ou texto)
         veiculo_raw = fields.get("customfield_11298")
         if isinstance(veiculo_raw, dict):
@@ -79,7 +89,14 @@ while True:
             veiculo = veiculo_raw or ""
 
         # DATA PREVISÃO
-        previsao = fields.get("customfield_11459", "")
+        previsao_raw = fields.get("customfield_10245", "")
+        if previsao_raw:
+            try:
+                previsao = datetime.strptime(previsao_raw, "%Y-%m-%d").strftime("%d/%m/%Y")
+            except:
+                previsao = previsao_raw
+        else:
+            previsao = ""
 
         all_rows.append({
             "Tipo de item": tipo,

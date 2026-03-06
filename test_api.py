@@ -12,7 +12,7 @@ EMAIL = os.getenv("EMAIL")
 API_TOKEN = os.getenv("API_TOKEN")
 
 # FILTRO JQL
-jql = 'project = MANTA AND status IN ("A Produzir", "Liberado Engenharia")'
+jql = 'project IN (MANTA, TENSYLON) AND status IN ("A Produzir", "Liberado Engenharia")'
 
 url = f"{JIRA_URL}/rest/api/3/search/jql"
 
@@ -99,7 +99,7 @@ while True:
             previsao = ""
 
         all_rows.append({
-            "Tipo de item": tipo,
+            "Tipo de issue": tipo,
             "Chave": chave_excel,
             "Resumo": resumo,
             "Status": status,

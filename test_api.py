@@ -27,7 +27,7 @@ while True:
 
     params = {
         "jql": jql,
-        "maxResults": 100,
+        "maxResults": 100, 
         "fields": [
             "issuetype",
             "summary",

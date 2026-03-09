@@ -157,7 +157,7 @@ cards_update = cards_sem_previsao[[
 ]]
 
 # Salvar em novo arquivo Excel
-update_filename = ".\\archives\\update_cards.xlsx"
+update_filename = ".\\archives\\data_update\\update_cards.xlsx"
 cards_update.to_excel(update_filename, index=False)
 
 # Adicionar hyperlinks na coluna Chave do arquivo update_cards

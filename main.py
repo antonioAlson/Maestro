@@ -41,7 +41,7 @@ class SidebarApp:
         # Mapeamento de ícones
         image_files = {
             "home": "home.png",
-            "insights": "insigths.png",
+            "dashboard": "dashboard.png",
             "pcp": "pcp.png",
             "settings": "settings.png",
             "exit": "exit.png"
@@ -91,8 +91,8 @@ class SidebarApp:
         # Itens do menu principal (imagem_key, texto, comando)
         menu_items = [
             ("home", "Home", self.home_action),
-            ("insights", "Insights", self.dashboard_action),
-            ("pcp", "PCP", self.files_action),
+            ("dashboard", "Dashboard", self.dashboard_action),
+            ("pcp", "PCP", self.pcp_action),
             ("settings", "Configurações", self.settings_action),
         ]
         
@@ -230,9 +230,9 @@ class SidebarApp:
             "Dashboard com métricas e estatísticas importantes do sistema."
         )
     
-    def files_action(self):
+    def pcp_action(self):
         self.show_content(
-            "📁 Arquivos",
+            "📁 PCP",
             "Gerenciador de arquivos - visualize e organize seus documentos."
         )
     

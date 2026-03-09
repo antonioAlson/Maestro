@@ -1,0 +1,93 @@
+import requests
+from requests.auth import HTTPBasicAuth
+import pandas as pd
+import os
+import shutil
+from dotenv import load_dotenv
+
+# Carregar variáveis de ambiente do arquivo .env
+load_dotenv()
+
+JIRA_URL = os.getenv("JIRA_URL")
+EMAIL = os.getenv("EMAIL")
+API_TOKEN = os.getenv("API_TOKEN")
+
+# Caminho do arquivo Excel com os cards
+ARQUIVO_CARDS = r".\src\data_update\update_cards.xlsx"
+
+# Diretório onde os PDFs serão salvos
+PASTA_PDFS = r".\src\downloads_ops\pdfs"
+
+# Limpar pasta de PDFs se existir
+if os.path.exists(PASTA_PDFS):
+    print("🗑️  Limpando pasta de PDFs...")
+    shutil.rmtree(PASTA_PDFS)
+    print("✅ Pasta limpa!")
+
+# Criar diretório
+os.makedirs(PASTA_PDFS, exist_ok=True)
+
+# Ler o arquivo Excel
+df = pd.read_excel(ARQUIVO_CARDS)
+
+print(f"\n📋 Total de cards a processar: {len(df)}")
+
+# Processar cada card
+for index, row in df.iterrows():
+    issue_key = row["ID"]
+    resumo = row["Resumo"]
+    
+    print(f"\n[{index+1}/{len(df)}] Processando {issue_key} - {resumo}")
+    
+    # Buscar informações do issue incluindo anexos
+    url = f"{JIRA_URL}/rest/api/3/issue/{issue_key}"
+    
+    response = requests.get(
+        url,
+        auth=HTTPBasicAuth(EMAIL, API_TOKEN),
+        headers={"Accept": "application/json"}
+    )
+    
+    if response.status_code != 200:
+        print(f"  ❌ Erro ao buscar {issue_key}: {response.status_code}")
+        continue
+    
+    data = response.json()
+    attachments = data.get("fields", {}).get("attachment", [])
+    
+    if not attachments:
+        print(f"  ⚠️ Nenhum anexo encontrado")
+        continue
+    
+    # Procurar pelo PDF específico com o nome igual ao Resumo
+    pdf_filename_esperado = f"{resumo}.pdf"
+    pdf_encontrado = False
+    
+    for attachment in attachments:
+        filename = attachment.get("filename", "")
+        
+        # Verificar se o nome do arquivo corresponde ao Resumo.pdf
+        if filename.lower() == pdf_filename_esperado.lower():
+            download_url = attachment.get("content")
+            pdf_path = os.path.join(PASTA_PDFS, pdf_filename_esperado)
+            
+            # Baixar o PDF
+            print(f"  📥 Baixando: {filename}")
+            pdf_response = requests.get(
+                download_url,
+                auth=HTTPBasicAuth(EMAIL, API_TOKEN)
+            )
+            
+            if pdf_response.status_code == 200:
+                with open(pdf_path, "wb") as f:
+                    f.write(pdf_response.content)
+                print(f"  ✅ Salvo como: {pdf_filename_esperado}")
+                pdf_encontrado = True
+                break
+            else:
+                print(f"  ❌ Erro ao baixar PDF: {pdf_response.status_code}")
+    
+    if not pdf_encontrado:
+        print(f"  ⚠️ PDF '{pdf_filename_esperado}' não encontrado nos anexos")
+
+print(f"\n✅ Processamento concluído!")

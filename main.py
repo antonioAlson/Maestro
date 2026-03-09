@@ -31,7 +31,7 @@ class SidebarApp:
         
         # Criar área de conteúdo
         self.create_content_area()
-    
+
     def load_images(self):
         """Carrega as imagens dos ícones"""
         self.images = {}
@@ -246,12 +246,10 @@ class SidebarApp:
         """Fecha a aplicação"""
         self.root.quit()
 
-
 def main():
     root = ctk.CTk()
     app = SidebarApp(root)
     root.mainloop()
-
 
 if __name__ == "__main__":
     main()

@@ -42,7 +42,7 @@ class SidebarApp:
         image_files = {
             "home": "home.png",
             "insights": "insigths.png",
-            "edit": "edit.png",
+            "pcp": "pcp.png",
             "settings": "settings.png",
             "exit": "exit.png"
         }
@@ -92,7 +92,7 @@ class SidebarApp:
         menu_items = [
             ("home", "Home", self.home_action),
             ("insights", "Insights", self.dashboard_action),
-            ("edit", "Editar", self.files_action),
+            ("pcp", "PCP", self.files_action),
             ("settings", "Configurações", self.settings_action),
         ]
         

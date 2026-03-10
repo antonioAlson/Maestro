@@ -475,6 +475,13 @@ class SidebarApp:
             script_path = os.path.join("scripts", "generate_archives.py")
             output_file = os.path.join("src", "jira_cards.xlsx")
             self.run_script_with_loading(script_path, "Gerar Relatório", output_file)
+        
+        elif routine_name == "Adicionar Datas":
+            # Executar o script atualizar_jira.py para gerar update_cards.xlsx
+            script_path = os.path.join("scripts", "data_update", "atualizar_jira.py")
+            output_file = os.path.join("src", "data_update", "update_cards.xlsx")
+            self.run_script_with_loading(script_path, "Adicionar Datas", output_file)
+        
         # Adicione aqui a lógica específica para outras rotinas
     
     def settings_action(self):

@@ -150,38 +150,3 @@ for idx, link in enumerate(all_links, start=2):
 wb.save(filename)
 
 print(f"Arquivo {filename} criado com sucesso!")
-
-
-# Filtro para identificar cartões sem previsão de entrega preenchida
-# Filtrar linhas onde DT. PREVISÃO ENTREGA está vazia
-cards_sem_previsao = df[df["DT. PREVISÃO ENTREGA"].isna() | (df["DT. PREVISÃO ENTREGA"] == "")]
-
-# Selecionar apenas as colunas desejadas
-cards_update = cards_sem_previsao[[
-    "ID",
-    "Tipo de issue",
-    "Chave",
-    "Resumo",
-    "DT. PREVISÃO ENTREGA"
-]]
-
-# Salvar em novo arquivo Excel
-update_filename = ".\\src\\data_update\\update_cards.xlsx"
-cards_update.to_excel(update_filename, index=False)
-
-# Adicionar hyperlinks na coluna Chave do arquivo update_cards
-wb_update = load_workbook(update_filename)
-ws_update = wb_update.active
-
-# Criar lista de links apenas para cards sem previsão
-links_sem_previsao = cards_sem_previsao["Chave"].tolist()
-
-# Adicionar hyperlinks (começando da linha 2, pulando o cabeçalho)
-for idx, link in enumerate(links_sem_previsao, start=2):
-    cell = ws_update[f'C{idx}']  # Coluna C é a coluna "Chave"
-    cell.hyperlink = link
-    cell.style = "Hyperlink"
-
-wb_update.save(update_filename)
-
-print("Arquivo update_cards.xlsx criado com sucesso!")

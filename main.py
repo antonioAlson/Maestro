@@ -165,26 +165,9 @@ class SidebarApp:
         self.content_area = ctk.CTkFrame(self.main_container, corner_radius=0, fg_color="#3d3d3d")
         self.content_area.pack(side="left", fill="both", expand=True)
         
-        # Título da área de conteúdo
-        title_label = ctk.CTkLabel(
-            self.content_area,
-            text="Área de Conteúdo Principal",
-            font=ctk.CTkFont(size=28, weight="bold")
-        )
-        title_label.pack(pady=30)
-        
-        # Texto informativo
-        info_label = ctk.CTkLabel(
-            self.content_area,
-            text="Clique nos itens do menu para alterar o conteúdo",
-            font=ctk.CTkFont(size=14),
-            text_color="gray"
-        )
-        info_label.pack()
-        
         # Frame para exibir conteúdo dinâmico
         self.dynamic_content = ctk.CTkFrame(self.content_area, fg_color="transparent")
-        self.dynamic_content.pack(fill="both", expand=True, padx=20, pady=20)
+        self.dynamic_content.pack(fill="both", expand=True, padx=10, pady=10)
     
     def clear_content(self):
         """Limpa o conteúdo dinâmico"""
@@ -196,8 +179,8 @@ class SidebarApp:
         self.clear_content()
         
         # Card de conteúdo
-        card = ctk.CTkFrame(self.dynamic_content, corner_radius=15)
-        card.pack(fill="both", expand=True, padx=40, pady=20)
+        card = ctk.CTkFrame(self.dynamic_content, corner_radius=10)
+        card.pack(fill="both", expand=True, padx=20, pady=10)
         
         # Título do card
         title_label = ctk.CTkLabel(

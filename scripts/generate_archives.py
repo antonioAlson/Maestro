@@ -1,3 +1,11 @@
+import sys
+import io
+
+# Configurar saída UTF-8 para Windows
+if sys.platform == 'win32':
+    sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8', errors='replace')
+    sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding='utf-8', errors='replace')
+
 import requests
 import pandas as pd
 from requests.auth import HTTPBasicAuth
@@ -71,12 +79,10 @@ while True:
 
         # SITUAÇÃO (dropdown Jira)
         situacao_raw = fields.get("customfield_10039")
-        print(f"DEBUG - Issue {key} - situacao_raw: {situacao_raw}, type: {type(situacao_raw)}")
         if isinstance(situacao_raw, dict):
             situacao = situacao_raw.get("value", "")
         else:
             situacao = situacao_raw or ""
-        print(f"DEBUG - Issue {key} - situacao final: {situacao}")
 
         # Filtrar apenas situações desejadas
         situacoes_validas = ["⚪️RECEBIDO ENCAMINHADO", "🟢RECEBIDO LIBERADO"]

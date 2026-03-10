@@ -12,8 +12,14 @@ JIRA_URL = os.getenv("JIRA_URL")
 EMAIL = os.getenv("EMAIL")
 API_TOKEN = os.getenv("API_TOKEN")
 
+
+origem = r".\src\data_update\update_cards.xlsx"
+destino = r".\src\downloads_ops\update_cards.xlsx"
+
+shutil.move(origem, destino)
+
 # Caminho do arquivo Excel com os cards
-ARQUIVO_CARDS = r".\src\data_update\update_cards.xlsx"
+ARQUIVO_CARDS = destino
 
 # Diretório onde os PDFs serão salvos
 PASTA_PDFS = r".\src\downloads_ops\pdfs"

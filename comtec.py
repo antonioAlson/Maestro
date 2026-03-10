@@ -116,7 +116,7 @@ while True:
             "Resumo": resumo,
             "Status": status,
             "SITUAÇÃO": situacao,
-            "Veiculo - Marca/Modelo": veiculo,
+            "Veículo": veiculo,
             "DT. PREVISÃO ENTREGA": previsao
         })
         all_links.append(link)

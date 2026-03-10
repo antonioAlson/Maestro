@@ -9,13 +9,13 @@ class SidebarApp:
     def __init__(self, root):
         self.root = root
         self.root.title("Home")
-        self.root.geometry("1000x500")
+        self.root.geometry("1200x500")
         # Configurar tema
         ctk.set_appearance_mode("dark")  # "light" ou "dark"
         ctk.set_default_color_theme("blue")  # "blue", "green", "dark-blue"
         
         # Centralizar janela na tela
-        self.center_window(1000, 500)
+        self.center_window(1200, 600)
         
         # Estado da sidebar (True = aberta, False = fechada)
         self.sidebar_expanded = True
@@ -384,17 +384,17 @@ class SidebarApp:
             buttons_frame = ctk.CTkFrame(self.loading_popup, fg_color="transparent")
             buttons_frame.pack(pady=20)
             
-            # Botão abrir arquivo (se houver caminho)
-            if file_path:
-                open_btn = ctk.CTkButton(
+            # Botão visualizar dados (se houver caminho e for arquivo Excel)
+            if file_path and file_path.endswith('.xlsx'):
+                view_btn = ctk.CTkButton(
                     buttons_frame,
-                    text="Abrir Arquivo",
-                    command=lambda: self.open_file(file_path),
-                    width=120,
+                    text="Visualizar Dados",
+                    command=lambda: self.view_excel_data(file_path),
+                    width=130,
                     height=35,
                     font=ctk.CTkFont(size=13, weight="bold")
                 )
-                open_btn.pack(side="left", padx=5)
+                view_btn.pack(side="left", padx=5)
             
             # Botão fechar
             close_btn = ctk.CTkButton(
@@ -417,6 +417,135 @@ class SidebarApp:
                 print(f"Arquivo não encontrado: {file_path}")
         except Exception as e:
             print(f"Erro ao abrir arquivo: {e}")
+    
+    def view_excel_data(self, file_path):
+        """Visualiza os dados do Excel em uma tabela na interface"""
+        try:
+            # Fechar popup de sucesso
+            self.close_loading_popup()
+            
+            # Ler arquivo Excel
+            import pandas as pd
+            df = pd.read_excel(file_path)
+            
+            # Criar cópia para visualização
+            df_visual = df.copy()
+            
+            # Combinar Tipo de issue e Resumo em uma única coluna
+            if "Tipo de issue" in df_visual.columns and "Resumo" in df_visual.columns:
+                df_visual["Issue"] = df_visual["Tipo de issue"] + " - " + df_visual["Resumo"]
+                # Remover as colunas originais na visualização
+                df_visual = df_visual.drop(columns=["Tipo de issue", "Resumo"])
+            
+            # Filtrar colunas (remover ID e Chave)
+            columns_to_hide = ["ID", "Chave"]
+            display_columns = [col for col in df_visual.columns if col not in columns_to_hide]
+            
+            # Reorganizar para colocar Issue em primeiro
+            if "Issue" in display_columns:
+                display_columns.remove("Issue")
+                display_columns.insert(0, "Issue")
+            
+            # Limpar área de conteúdo
+            self.clear_content()
+            
+            # Card de conteúdo
+            card = ctk.CTkFrame(self.dynamic_content, corner_radius=10)
+            card.pack(fill="both", expand=True, padx=20, pady=10)
+            
+            # Título
+            title_label = ctk.CTkLabel(
+                card,
+                text="  Visualização de Dados",
+                font=ctk.CTkFont(size=24, weight="bold")
+            )
+            title_label.pack(pady=20, anchor="w", padx=30)
+            
+            # Info do arquivo
+            info_label = ctk.CTkLabel(
+                card,
+                text=f"Arquivo: {os.path.basename(file_path)} | Total de registros: {len(df_visual)}",
+                font=ctk.CTkFont(size=12),
+                text_color="gray70"
+            )
+            info_label.pack(pady=5, anchor="w", padx=30)
+            
+            # Frame scrollable para a tabela
+            table_frame = ctk.CTkScrollableFrame(card, height=350)
+            table_frame.pack(fill="both", expand=True, padx=30, pady=20)
+            
+            # Criar cabeçalho da tabela
+            for col_idx, column in enumerate(display_columns):
+                header_frame = ctk.CTkFrame(
+                    table_frame,
+                    fg_color="gray25",
+                    border_width=1,
+                    border_color="gray40"
+                )
+                header_frame.grid(row=0, column=col_idx, padx=1, pady=1, sticky="ew")
+                
+                header = ctk.CTkLabel(
+                    header_frame,
+                    text=str(column),
+                    font=ctk.CTkFont(size=12, weight="bold"),
+                    anchor="w",
+                    width=100 if column in ["Issue", "Status"] else 150
+                )
+                header.pack(padx=8, pady=6, fill="both", expand=True)
+            
+            # Preencher dados da tabela (limitado a 100 linhas para performance)
+            max_rows = min(len(df_visual), 100)
+            for row_idx in range(max_rows):
+                for col_idx, column in enumerate(display_columns):
+                    value = df_visual[column].iloc[row_idx]
+                    # Converter para string e limitar tamanho
+                    cell_text = str(value) if pd.notna(value) else ""
+                    if len(cell_text) > 50:
+                        cell_text = cell_text[:47] + "..."
+                    
+                    # Frame para criar borda da célula
+                    cell_frame = ctk.CTkFrame(
+                        table_frame,
+                        fg_color="gray20",
+                        border_width=1,
+                        border_color="gray30"
+                    )
+                    cell_frame.grid(row=row_idx + 1, column=col_idx, padx=1, pady=1, sticky="ew")
+                    
+                    cell = ctk.CTkLabel(
+                        cell_frame,
+                        text=cell_text,
+                        font=ctk.CTkFont(size=11),
+                        anchor="w",
+                        width=100 if column in ["Issue", "Status"] else 150
+                    )
+                    cell.pack(padx=8, pady=4, fill="both", expand=True)
+            
+            # Aviso se houver mais linhas
+            if len(df) > 100:
+                warning_label = ctk.CTkLabel(
+                    card,
+                    text=f"⚠️ Exibindo apenas as primeiras 100 linhas de {len(df)}",
+                    font=ctk.CTkFont(size=11),
+                    text_color="orange"
+                )
+                warning_label.pack(pady=5, anchor="w", padx=30)
+            
+            # Botão para abrir no Excel
+            open_excel_btn = ctk.CTkButton(
+                card,
+                text="Abrir no Excel",
+                command=lambda: self.open_file(file_path),
+                width=150,
+                height=35,
+                font=ctk.CTkFont(size=13, weight="bold")
+            )
+            open_excel_btn.pack(pady=15)
+            
+        except Exception as e:
+            print(f"Erro ao visualizar dados: {e}")
+            # Fechar popup se houver
+            self.close_loading_popup()
     
     def close_loading_popup(self):
         """Fecha o popup de carregamento"""
@@ -477,8 +606,8 @@ class SidebarApp:
             self.run_script_with_loading(script_path, "Gerar Relatório", output_file)
         
         elif routine_name == "Adicionar Datas":
-            # Executar o script atualizar_jira.py para gerar update_cards.xlsx
-            script_path = os.path.join("scripts", "data_update", "atualizar_jira.py")
+            # Executar o script update_dates.py para gerar update_cards.xlsx
+            script_path = os.path.join("scripts", "data_update", "update_dates.py")
             output_file = os.path.join("src", "data_update", "update_cards.xlsx")
             self.run_script_with_loading(script_path, "Adicionar Datas", output_file)
         

@@ -127,7 +127,7 @@ while True:
             "Resumo": resumo,
             "Status": status,
             "SITUAÇÃO": situacao,
-            "Veiculo - Marca/Modelo": veiculo,
+            "Veículo": veiculo,
             "DT. PREVISÃO ENTREGA": dt_previsao
         })
 
@@ -156,6 +156,9 @@ cards_update = cards_sem_previsao[[
     "Tipo de issue",
     "Chave",
     "Resumo",
+    "Status",
+    "SITUAÇÃO",
+    "Veículo",
     "DT. PREVISÃO ENTREGA"
 ]]
 
@@ -182,7 +185,6 @@ for idx, link in enumerate(links_sem_previsao, start=2):
 wb_update.save(update_filename)
 
 print(f"Arquivo {update_filename} criado com sucesso!")
-
 
 # ============================================================================
 # PARTE 2: ATUALIZAR JIRA (COMENTADO - APENAS GERAR ARQUIVO POR ENQUANTO)

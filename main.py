@@ -470,12 +470,12 @@ class SidebarApp:
             buttons_frame = ctk.CTkFrame(self.loading_popup, fg_color="transparent")
             buttons_frame.pack(pady=20)
             
-            # Botão visualizar dados (se houver caminho e for arquivo Excel)
+            # Botão abrir Excel (se houver caminho e for arquivo Excel)
             if file_path and file_path.endswith('.xlsx'):
                 view_btn = ctk.CTkButton(
                     buttons_frame,
-                    text="Visualizar Dados",
-                    command=lambda: self.view_excel_data(file_path),
+                    text="Abrir Excel",
+                    command=lambda: [self.open_file(file_path), self.close_loading_popup()],
                     width=130,
                     height=35,
                     font=ctk.CTkFont(size=13, weight="bold")
@@ -1139,8 +1139,8 @@ class SidebarApp:
         print(f"Rotina selecionada: {routine_name}")
         
         if routine_name == "Gerar Relatório":
-            # Executar o script generate_archives.py com popup de carregamento
-            script_path = os.path.join("scripts", "generate_archives.py")
+            # Executar o script new_archive.py com popup de carregamento
+            script_path = os.path.join("scripts", "new_archive.py")
             output_file = os.path.join("src", "jira_cards.xlsx")
             self.run_script_with_loading(script_path, "Gerar Relatório", output_file)
         

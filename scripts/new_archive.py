@@ -130,10 +130,10 @@ print("Total de cartões:", len(all_rows))
 # Criar dataframe
 df = pd.DataFrame(all_rows)
 
-# Criar diretórios se não existirem
-os.makedirs(".\\src\\data_update", exist_ok=True)
+# Criar diretório se não existir
+os.makedirs(".\\src", exist_ok=True)
 
-# Gerar Excel
+# Gerar Excel - apenas a tabela jira_cards
 filename = ".\\src\\jira_cards.xlsx"
 df.to_excel(filename, index=False)
 

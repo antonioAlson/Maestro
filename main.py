@@ -4,6 +4,7 @@ import os
 import subprocess
 import threading
 import sys
+import tkinter as tk
 
 # Adicionar path do script update_dates
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'scripts', 'data_update'))
@@ -15,6 +16,7 @@ class SidebarApp:
         self.root = root
         self.root.title("Home")
         self.root.geometry("1000x500")
+        self.set_window_icon()
         # Configurar tema
         ctk.set_appearance_mode("dark")  # "light" ou "dark"
         ctk.set_default_color_theme("blue")  # "blue", "green", "dark-blue"
@@ -48,6 +50,26 @@ class SidebarApp:
         
         # Criar área de conteúdo
         self.create_content_area()
+        
+        # Abrir tela Home por padrão
+        self.home_action()
+
+    def set_window_icon(self):
+        """Define o ícone da janela principal"""
+        icon_ico_path = os.path.join(os.path.dirname(__file__), "img", "icone.ico")
+        
+        if not os.path.exists(icon_ico_path):
+            print(f"Ícone não encontrado: {icon_ico_path}")
+            return
+        
+        try:
+            # Aplicar ícone .ico no Windows
+            self.root.iconbitmap(icon_ico_path)
+            # Reaplicar após inicialização para garantir persistência
+            self.root.after(100, lambda: self.root.iconbitmap(icon_ico_path))
+            print(f"Ícone aplicado: {icon_ico_path}")
+        except Exception as e:
+            print(f"Erro ao definir ícone da janela: {e}")
     
     def center_window(self, width, height):
         """Centraliza a janela na tela"""
@@ -204,7 +226,6 @@ class SidebarApp:
             else:
                 # Botões inativos - transparente
                 btn.configure(fg_color="transparent")
-    
 
     def create_content_area(self):
         """Cria a área de conteúdo principal"""
@@ -239,26 +260,52 @@ class SidebarApp:
             compound="left"
         )
         title_label.pack(pady=30, anchor=title_anchor, padx=30)
-        
-        # Descrição
-        desc_label = ctk.CTkLabel(
-            card,
-            text=description,
-            font=ctk.CTkFont(size=14),
-            wraplength=500,
-            text_color="gray70"
-        )
-        desc_label.pack(pady=10, padx=30)
     
     # Ações dos botões do menu
     def home_action(self):
         self.set_active_menu_button("home")
-        self.show_content(
-            "Home",
-            "Bem-vindo à página inicial! Aqui você pode ver um resumo geral do sistema.",
-            title_anchor="w",
-            title_img=self.images.get("home")
+        self.clear_content()
+        
+        # Card de conteúdo
+        card = ctk.CTkFrame(self.dynamic_content, corner_radius=10)
+        card.pack(fill="both", expand=True, padx=20, pady=10)
+        
+        # Container centralizado para o título
+        title_container = ctk.CTkFrame(card, fg_color="transparent")
+        title_container.place(relx=0.5, rely=0.5, anchor="center")
+        
+        # Frame para título com gradiente simulado
+        title_frame = ctk.CTkFrame(title_container, fg_color="transparent")
+        title_frame.pack()
+        
+        # Título MAESTRO estilizado com efeito gradiente (letras com cores diferentes)
+        letters_colors = [
+            ("#1f6aa5", "M"),
+            ("#2674ae", "A"),
+            ("#2d7eb7", "E"),
+            ("#3488c0", "S"),
+            ("#3b92c9", "T"),
+            ("#429cd2", "R"),
+            ("#49a6db", "O")
+        ]
+        
+        for color, letter in letters_colors:
+            letter_label = ctk.CTkLabel(
+                title_frame,
+                text=letter,
+                font=ctk.CTkFont(family="Segoe UI", size=80, weight="bold"),
+                text_color=color
+            )
+            letter_label.pack(side="left", padx=1)
+        
+        # Subtítulo
+        subtitle = ctk.CTkLabel(
+            title_container,
+            text="Sistema de Gestão PCP/PROCESSOS",
+            font=ctk.CTkFont(family="Segoe UI", size=20),
+            text_color="gray60"
         )
+        subtitle.pack(pady=(15, 0))
     
     def dashboard_action(self):
         self.set_active_menu_button("dashboard")
@@ -270,7 +317,7 @@ class SidebarApp:
         )
     
     def pcp_action(self):
-        """Mostra conteúdo PCP com 6 botões em grade 2x3"""
+        """Mostra conteúdo PCP com layout organizado e ações em grade"""
         self.set_active_menu_button("pcp")
         self.clear_content()
         
@@ -278,30 +325,38 @@ class SidebarApp:
         card = ctk.CTkFrame(self.dynamic_content, corner_radius=10)
         card.pack(fill="both", expand=True, padx=20, pady=10)
         
-        # Título do card com imagem
-        title_text = f"  PCP"
+        # Cabeçalho da área PCP
+        header_frame = ctk.CTkFrame(card, fg_color="transparent")
+        header_frame.pack(fill="x", padx=30, pady=(24, 8))
+
+        title_text = "  PCP"
         title_label = ctk.CTkLabel(
-            card,
+            header_frame,
             text=title_text,
             font=ctk.CTkFont(size=24, weight="bold"),
             image=self.images.get("pcp"),
             compound="left"
         )
-        title_label.pack(pady=30, anchor="w", padx=30)
+        title_label.pack(anchor="w")
         
-        # Descrição
-        desc_label = ctk.CTkLabel(
-            card,
-            text="Rotinas - realize as rotinas conforme necessário.",
-            font=ctk.CTkFont(size=14),
-            wraplength=500,
-            text_color="gray70"
+        # Container de ações
+        actions_frame = ctk.CTkFrame(card, corner_radius=12, fg_color="#2f2f2f")
+        actions_frame.pack(fill="both", expand=True, padx=30, pady=(8, 24))
+
+        actions_title = ctk.CTkLabel(
+            actions_frame,
+            text="Ações PCP",
+            font=ctk.CTkFont(size=15, weight="bold"),
+            text_color="gray85"
         )
-        desc_label.pack(pady=10, padx=30, anchor="w")
-        
-        # Container para os botões com grid 2x3
-        buttons_container = ctk.CTkFrame(card, fg_color="transparent")
-        buttons_container.pack(fill="both", expand=True, padx=30, pady=20)
+        actions_title.pack(anchor="w", padx=18, pady=(14, 8))
+
+        buttons_container = ctk.CTkFrame(actions_frame, fg_color="transparent")
+        buttons_container.pack(fill="both", expand=True, padx=14, pady=(4, 14))
+
+        # Grid responsivo 2x2
+        buttons_container.grid_columnconfigure((0, 1), weight=1, uniform="pcp_col")
+        buttons_container.grid_rowconfigure((0, 1), weight=1)
         
         # Definir botões
         button_names = [
@@ -313,18 +368,19 @@ class SidebarApp:
         
         # Criar botões em grade 2x2 (2 colunas, 2 linhas)
         for i, btn_name in enumerate(button_names):
-            row = i // 2  # 2 linhas
-            col = i % 2   # 2 colunas
+            row = i // 2
+            col = i % 2
             btn = ctk.CTkButton(
                 buttons_container,
                 text=btn_name,
-                width=200,
-                height=40,
-                font=ctk.CTkFont(size=13, weight="bold"),
-                corner_radius=8,
+                height=45,
+                font=ctk.CTkFont(size=14, weight="bold"),
+                corner_radius=10,
+                fg_color="#1f6aa5",
+                hover_color="#2f7dc2",
                 command=lambda name=btn_name: self.pcp_routine_action(name)
             )
-            btn.grid(row=row, column=col, padx=5, pady=5)
+            btn.grid(row=row, column=col, padx=10, pady=10, sticky="nsew")
     
     def show_loading_popup(self, message="Processando..."):
         """Mostra popup de carregamento centralizado"""

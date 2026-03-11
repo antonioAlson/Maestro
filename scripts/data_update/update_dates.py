@@ -473,6 +473,76 @@ def abrir_janela_visualizacao(main_app):
         df = pd.read_excel(file_path)
         print(f"Arquivo lido com sucesso. {len(df)} linhas encontradas")
         
+        # Verificar se há dados
+        if len(df) == 0:
+            print("Nenhum item encontrado no arquivo")
+            # Criar janela com mensagem de aviso
+            excel_window = ctk.CTkToplevel(main_app.root)
+            excel_window.title("Visualização de Dados - " + os.path.basename(file_path))
+            excel_window.geometry("900x500")
+            
+            # Centralizar a janela
+            excel_window.update_idletasks()
+            width = 900
+            height = 500
+            screen_width = excel_window.winfo_screenwidth()
+            screen_height = excel_window.winfo_screenheight()
+            x = (screen_width - width) // 2
+            y = (screen_height - height) // 2
+            excel_window.geometry(f"{width}x{height}+{x}+{y}")
+            
+            # Trazer janela para frente
+            excel_window.lift()
+            excel_window.focus_force()
+            excel_window.attributes('-topmost', True)
+            excel_window.after(100, lambda: excel_window.attributes('-topmost', False))
+            
+            # Card de conteúdo
+            card = ctk.CTkFrame(excel_window, corner_radius=10)
+            card.pack(fill="both", expand=True, padx=20, pady=20)
+            
+            # Ícone de aviso
+            warning_label = ctk.CTkLabel(
+                card,
+                text="⚠️",
+                font=ctk.CTkFont(size=48)
+            )
+            warning_label.pack(pady=(30, 10))
+            
+            # Mensagem principal
+            message_label = ctk.CTkLabel(
+                card,
+                text="Nenhum item encontrado",
+                font=ctk.CTkFont(size=20, weight="bold"),
+                text_color="orange"
+            )
+            message_label.pack(pady=10)
+            
+            # Descrição
+            desc_label = ctk.CTkLabel(
+                card,
+                text="O arquivo não contém nenhum registro para exibir.\nVerifique os filtros ou execute o script de geração novamente.",
+                font=ctk.CTkFont(size=12),
+                text_color="gray70",
+                wraplength=400
+            )
+            desc_label.pack(pady=10)
+            
+            # Botão fechar
+            close_btn = ctk.CTkButton(
+                card,
+                text="Fechar",
+                command=excel_window.destroy,
+                width=120,
+                height=40,
+                font=ctk.CTkFont(size=13, weight="bold"),
+                fg_color="gray40",
+                hover_color="gray50"
+            )
+            close_btn.pack(pady=20)
+            
+            return
+        
         # Criar cópia para visualização
         df_visual = df.copy()
         
@@ -521,26 +591,30 @@ def abrir_janela_visualizacao(main_app):
         card = ctk.CTkFrame(excel_window, corner_radius=10)
         card.pack(fill="both", expand=True, padx=10, pady=10)
         
+        # Cabeçalho
+        header_frame = ctk.CTkFrame(card, fg_color="transparent")
+        header_frame.pack(fill="x", padx=20, pady=(15, 10))
+        
         # Título
         title_label = ctk.CTkLabel(
-            card,
-            text="  Visualização de Dados",
-            font=ctk.CTkFont(size=18, weight="bold")
+            header_frame,
+            text="📊 Visualização de Dados",
+            font=ctk.CTkFont(size=20, weight="bold")
         )
-        title_label.pack(pady=10, anchor="w", padx=15)
+        title_label.pack(anchor="w")
         
         # Info do arquivo
         info_label = ctk.CTkLabel(
-            card,
-            text=f"Arquivo: {os.path.basename(file_path)} | Total de registros: {len(df_visual)}",
-            font=ctk.CTkFont(size=10),
-            text_color="gray70"
+            header_frame,
+            text=f"Arquivo: {os.path.basename(file_path)} • {len(df_visual)} registros",
+            font=ctk.CTkFont(size=11),
+            text_color="gray65"
         )
-        info_label.pack(pady=3, anchor="w", padx=15)
+        info_label.pack(anchor="w", pady=(4, 0))
         
         # Frame scrollable para a tabela
-        table_frame = ctk.CTkScrollableFrame(card, height=280)
-        table_frame.pack(fill="both", expand=True, padx=15, pady=10)
+        table_frame = ctk.CTkScrollableFrame(card, height=280, fg_color="#2b2b2b")
+        table_frame.pack(fill="both", expand=True, padx=20, pady=(5, 10))
         
         # Criar cabeçalho da tabela
         for col_idx, column in enumerate(display_columns):
@@ -603,51 +677,54 @@ def abrir_janela_visualizacao(main_app):
             warning_label = ctk.CTkLabel(
                 card,
                 text=f"⚠️ Exibindo apenas as primeiras 100 linhas de {len(df)}",
-                font=ctk.CTkFont(size=9),
-                text_color="orange"
+                font=ctk.CTkFont(size=10),
+                text_color="#ff9800"
             )
-            warning_label.pack(pady=3, anchor="w", padx=15)
+            warning_label.pack(pady=(0, 5), anchor="w", padx=20)
         
         # Container para botões
         buttons_container = ctk.CTkFrame(card, fg_color="transparent")
-        buttons_container.pack(pady=8)
+        buttons_container.pack(pady=(5, 15), padx=20, fill="x")
         
         # Botão Salvar e Atualizar Jira
         save_btn = ctk.CTkButton(
             buttons_container,
             text="💾 Salvar e Atualizar Jira",
             command=lambda: salvar_e_atualizar_jira(file_path, entries_data, card, excel_window),
-            width=170,
-            height=30,
-            font=ctk.CTkFont(size=11, weight="bold"),
+            width=190,
+            height=38,
+            font=ctk.CTkFont(size=12, weight="bold"),
             fg_color="#2a9d2a",
-            hover_color="#238a23"
+            hover_color="#238a23",
+            corner_radius=8
         )
-        save_btn.pack(side="left", padx=3)
+        save_btn.pack(side="left", padx=(0, 8))
         
         # Botão para abrir no Excel
         open_excel_btn = ctk.CTkButton(
             buttons_container,
             text="📄 Abrir Excel",
             command=lambda: abrir_arquivo_excel(file_path),
-            width=120,
-            height=30,
-            font=ctk.CTkFont(size=11, weight="bold")
+            width=140,
+            height=38,
+            font=ctk.CTkFont(size=12, weight="bold"),
+            corner_radius=8
         )
-        open_excel_btn.pack(side="left", padx=3)
+        open_excel_btn.pack(side="left", padx=(0, 8))
         
         # Botão Fechar
         close_btn = ctk.CTkButton(
             buttons_container,
             text="✕ Fechar",
             command=excel_window.destroy,
-            width=100,
-            height=30,
-            font=ctk.CTkFont(size=11, weight="bold"),
+            width=110,
+            height=38,
+            font=ctk.CTkFont(size=12, weight="bold"),
             fg_color="gray40",
-            hover_color="gray50"
+            hover_color="gray50",
+            corner_radius=8
         )
-        close_btn.pack(side="left", padx=3)
+        close_btn.pack(side="left")
         
         print("Janela de visualização criada com sucesso!")
         

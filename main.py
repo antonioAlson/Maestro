@@ -6,9 +6,8 @@ import threading
 import sys
 import tkinter as tk
 
-# Adicionar path do script update_dates
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'scripts', 'data_update'))
-import update_dates
+# Importar módulo update_dates
+from scripts.data_update import update_dates
 
 
 class SidebarApp:

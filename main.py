@@ -1142,6 +1142,25 @@ class SidebarApp:
             except Exception as e:
                 print(f"Erro ao executar o script: {e}")
             finally:
+                success_output_file = output_file
+
+                # Para "Gerar Relatório", localizar o arquivo mais recente em src/temp/jira_cards
+                if script_name == "Gerar Relatório":
+                    report_dir = os.path.join("src", "temp", "jira_cards")
+                    try:
+                        os.makedirs(report_dir, exist_ok=True)
+                        if os.path.isdir(report_dir):
+                            candidates = [
+                                os.path.join(report_dir, name)
+                                for name in os.listdir(report_dir)
+                                if name.startswith("jira_cards ") and name.endswith(".xlsx")
+                            ]
+                            if candidates:
+                                success_output_file = max(candidates, key=os.path.getmtime)
+                                print(f"Relatório mais recente encontrado: {success_output_file}")
+                    except Exception as e:
+                        print(f"Erro ao localizar relatório gerado: {e}")
+
                 # Parar simulação, completar progresso
                 self.script_running = False
                 self.root.after(0, lambda: self.update_progress(1.0))
@@ -1182,7 +1201,7 @@ class SidebarApp:
                         self.root.after(200, lambda: self.show_success_message(script_name, output_file))
                 else:
                     # Para outros scripts, mostrar mensagem de sucesso
-                    self.root.after(200, lambda: self.show_success_message(script_name, output_file))
+                    self.root.after(200, lambda: self.show_success_message(script_name, success_output_file))
         
         # Mostrar popup e iniciar execução em thread separada
         self.show_loading_popup(f"Executando {script_name}...")
@@ -1202,7 +1221,8 @@ class SidebarApp:
         if routine_name == "Gerar Relatório":
             # Executar o script new_archive.py com popup de carregamento
             script_path = os.path.join("scripts", "new_archive.py")
-            output_file = os.path.join("src", "jira_cards.xlsx")
+            output_file = os.path.join("src", "temp", "jira_cards")
+            os.makedirs(output_file, exist_ok=True)
             self.run_script_with_loading(script_path, "Gerar Relatório", output_file)
         
         elif routine_name == "Adicionar Datas":

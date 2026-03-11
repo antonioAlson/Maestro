@@ -130,11 +130,14 @@ print("Total de cartões:", len(all_rows))
 # Criar dataframe
 df = pd.DataFrame(all_rows)
 
-# Criar diretório se não existir
-os.makedirs(".\\src", exist_ok=True)
+# Criar diretório de saída se não existir
+output_dir = os.path.join("src", "temp", "jira_cards")
+os.makedirs(output_dir, exist_ok=True)
 
-# Gerar Excel - apenas a tabela jira_cards
-filename = ".\\src\\jira_cards.xlsx"
+# Gerar Excel com data e hora no nome do arquivo
+# Obs.: no Windows não é permitido ':' em nomes de arquivo, por isso usamos '.' entre hora e minuto.
+timestamp = datetime.now().strftime("%d.%m.%Y %H.%M")
+filename = os.path.join(output_dir, f"jira_cards {timestamp}.xlsx")
 df.to_excel(filename, index=False)
 
 # Adicionar hyperlinks na coluna Chave

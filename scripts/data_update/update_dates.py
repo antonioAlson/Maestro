@@ -12,7 +12,6 @@ from requests.auth import HTTPBasicAuth
 from datetime import datetime
 from dotenv import load_dotenv
 import os
-from openpyxl import load_workbook
 import customtkinter as ctk
 
 load_dotenv()
@@ -34,16 +33,15 @@ headers = {
 auth = HTTPBasicAuth(EMAIL, API_TOKEN)
 
 # ============================================================================
-# FUNÇÃO PARA GERAR ARQUIVO update_cards.xlsx
+# FUNCAO PARA GERAR DADOS DE UPDATE
 # ============================================================================
 
 def gerar_update_cards():
-    """Gera arquivo update_cards.xlsx com cartões sem previsão de entrega"""
+    """Gera DataFrame com cartoes sem previsao de entrega"""
     print("Buscando dados do Jira...")
 
     next_page = None
     all_rows = []
-    all_links = []
 
     while True:
         params = {
@@ -140,8 +138,6 @@ def gerar_update_cards():
                 "DT. PREVISÃO ENTREGA": dt_previsao
             })
 
-            all_links.append(link)
-
         print("Cartões coletados:", len(all_rows))
 
         if data.get("isLast"):
@@ -178,45 +174,20 @@ def gerar_update_cards():
             "DT. PREVISÃO ENTREGA"
         ]]
 
-    # Criar diretórios se não existirem
-    os.makedirs(".\\src\\data_update", exist_ok=True)
-
-    # Salvar arquivo
-    update_filename = ".\\src\\data_update\\update_cards.xlsx"
-    cards_update.to_excel(update_filename, index=False)
-
-    # Adicionar hyperlinks na coluna Chave
-    wb_update = load_workbook(update_filename)
-    ws_update = wb_update.active
-
-    # Adicionar hyperlinks (começando da linha 2, pulando o cabeçalho)
-    if len(all_links) > 0:
-        for idx, link in enumerate(all_links, start=2):
-            cell = ws_update[f'C{idx}']  # Coluna C é a coluna "Chave"
-            cell.hyperlink = link
-            cell.style = "Hyperlink"
-
-    # Ajustar largura da coluna SITUAÇÃO (coluna F) para 80px (aproximadamente 11 unidades)
-    ws_update.column_dimensions['F'].width = 11
-
-    wb_update.save(update_filename)
-    
-    print(f"Arquivo {update_filename} criado com sucesso!")
-    
-    # Retornar o DataFrame e o caminho do arquivo
-    return cards_update, update_filename
+    print("Dados carregados em memoria com sucesso!")
+    return cards_update
 
 # ============================================================================
 # FUNÇÕES PARA SALVAR E ATUALIZAR JIRA
 # ============================================================================
 
-def salvar_e_atualizar_jira(file_path, entries_data, card, excel_window):
-    """Salva alterações no Excel e atualiza no Jira"""
+def salvar_e_atualizar_jira(df_source, entries_data, card, excel_window):
+    """Aplica alteracoes no DataFrame em memoria e atualiza no Jira"""
     try:
         from datetime import datetime
         
-        # Ler arquivo Excel
-        df = pd.read_excel(file_path)
+        # Trabalhar com copia para nao alterar referencia original inesperadamente
+        df = df_source.copy()
         
         # Converter a coluna de data para datetime se necessário
         if "DT. PREVISÃO ENTREGA" in df.columns:
@@ -247,30 +218,11 @@ def salvar_e_atualizar_jira(file_path, entries_data, card, excel_window):
                     df.at[row_idx, column] = pd.NaT
             else:
                 df.at[row_idx, column] = new_value if new_value else ""
-        
-        # Salvar arquivo
-        df.to_excel(file_path, index=False)
-        
-        # Reaplicar hyperlinks se a coluna "Chave" existir
-        if "Chave" in df.columns:
-            from openpyxl import load_workbook
-            wb = load_workbook(file_path)
-            ws = wb.active
-            
-            for idx, link in enumerate(df["Chave"], start=2):
-                cell = ws[f'C{idx}']
-                cell.hyperlink = link
-                cell.style = "Hyperlink"
-            
-            if 'F' in ws.column_dimensions:
-                ws.column_dimensions['F'].width = 11
-            
-            wb.save(file_path)
-        
-        print(f"✓ Dados salvos no Excel!")
+
+        print("✓ Dados atualizados em memoria!")
         
         # Atualizar Jira
-        atualizar_jira_dates(file_path, card, excel_window)
+        atualizar_jira_dates(df, card, excel_window)
         
     except Exception as e:
         print(f"Erro ao salvar alterações: {e}")
@@ -278,15 +230,12 @@ def salvar_e_atualizar_jira(file_path, entries_data, card, excel_window):
         traceback.print_exc()
 
 
-def atualizar_jira_dates(file_path, card, excel_window):
-    """Atualiza as datas no Jira baseado no arquivo Excel"""
+def atualizar_jira_dates(df, card, excel_window):
+    """Atualiza as datas no Jira baseado no DataFrame em memoria"""
     try:
         from datetime import datetime
         
         CAMPO_PREVISAO = "customfield_10245"
-        
-        # Ler arquivo Excel
-        df = pd.read_excel(file_path)
         
         # Filtrar apenas linhas com ID e data preenchidos
         df_update = df[df["ID"].notna() & df["DT. PREVISÃO ENTREGA"].notna()].copy()
@@ -458,41 +407,24 @@ def mostrar_resultado_jira(success_count, error_count, card, excel_window):
     close_btn.pack(pady=(0, 16), padx=20)
 
 
-def abrir_arquivo_excel(file_path):
-    """Abre o arquivo Excel com o aplicativo padrão do sistema"""
-    try:
-        if os.path.exists(file_path):
-            os.startfile(file_path)  # Windows
-            print(f"Abrindo arquivo: {file_path}")
-        else:
-            print(f"Arquivo não encontrado: {file_path}")
-    except Exception as e:
-        print(f"Erro ao abrir arquivo: {e}")
-
-
 # ============================================================================
 # FUNÇÃO PARA ABRIR JANELA DE VISUALIZAÇÃO
 # ============================================================================
 
-def abrir_janela_visualizacao(main_app, df=None, file_path=None):
-    """Abre janela de visualização dos dados do Excel
+def abrir_janela_visualizacao(main_app, df=None):
+    """Abre janela de visualizacao dos dados em memoria
     Args:
         main_app: Instância do app principal
-        df: DataFrame opcional com os dados (evita leitura do arquivo)
-        file_path: Caminho do arquivo Excel (usado se df não for fornecido)
+        df: DataFrame com os dados para exibicao
     """
-    if file_path is None:
-        file_path = ".\\src\\data_update\\update_cards.xlsx"
-    
     try:
         print(f"Iniciando visualização de dados...")
-        
-        # Se DataFrame não foi fornecido, ler do arquivo
+
         if df is None:
-            print(f"Lendo arquivo: {file_path}")
-            df = pd.read_excel(file_path)
-        else:
-            print(f"Usando DataFrame fornecido")
+            print("Nenhum DataFrame fornecido para visualizacao")
+            return
+
+        print(f"Usando DataFrame fornecido")
             
         print(f"{len(df)} linhas encontradas")
         
@@ -500,11 +432,8 @@ def abrir_janela_visualizacao(main_app, df=None, file_path=None):
         if len(df) == 0:
             print("Nenhum item encontrado")
             # Criar janela com mensagem de aviso
-            title = "Visualização de Dados"
-            if file_path:
-                title += " - " + os.path.basename(file_path)
             excel_window = ctk.CTkToplevel(main_app.root)
-            excel_window.title(title)
+            excel_window.title("Visualização de Dados")
             excel_window.geometry("900x500")
             
             # Centralizar a janela
@@ -547,7 +476,7 @@ def abrir_janela_visualizacao(main_app, df=None, file_path=None):
             # Descrição
             desc_label = ctk.CTkLabel(
                 card,
-                text="O arquivo não contém nenhum registro para exibir.\nVerifique os filtros ou execute o script de geração novamente.",
+                text="Nao ha registros para exibir.\nVerifique os filtros e tente novamente.",
                 font=ctk.CTkFont(size=12),
                 text_color="gray70",
                 wraplength=400
@@ -593,11 +522,8 @@ def abrir_janela_visualizacao(main_app, df=None, file_path=None):
         print("Criando nova janela...")
         
         # Criar nova janela
-        title = "Visualização de Dados"
-        if file_path:
-            title += " - " + os.path.basename(file_path)
         excel_window = ctk.CTkToplevel(main_app.root)
-        excel_window.title(title)
+        excel_window.title("Visualização de Dados")
         excel_window.geometry("900x500")
         
         # Centralizar a nova janela
@@ -635,7 +561,7 @@ def abrir_janela_visualizacao(main_app, df=None, file_path=None):
         # Info do arquivo
         info_label = ctk.CTkLabel(
             header_frame,
-            text=f"Arquivo: {os.path.basename(file_path)} • {len(df_visual)} registros",
+            text=f"Registros carregados: {len(df_visual)}",
             font=ctk.CTkFont(size=11),
             text_color="gray65"
         )
@@ -719,7 +645,7 @@ def abrir_janela_visualizacao(main_app, df=None, file_path=None):
         save_btn = ctk.CTkButton(
             buttons_container,
             text="💾 Salvar e Atualizar Jira",
-            command=lambda: salvar_e_atualizar_jira(file_path, entries_data, card, excel_window),
+            command=lambda: salvar_e_atualizar_jira(df, entries_data, card, excel_window),
             width=190,
             height=38,
             font=ctk.CTkFont(size=12, weight="bold"),
@@ -728,18 +654,6 @@ def abrir_janela_visualizacao(main_app, df=None, file_path=None):
             corner_radius=8
         )
         save_btn.pack(side="left", padx=(0, 8))
-        
-        # Botão para abrir no Excel
-        open_excel_btn = ctk.CTkButton(
-            buttons_container,
-            text="📄 Abrir Excel",
-            command=lambda: abrir_arquivo_excel(file_path),
-            width=140,
-            height=38,
-            font=ctk.CTkFont(size=12, weight="bold"),
-            corner_radius=8
-        )
-        open_excel_btn.pack(side="left", padx=(0, 8))
         
         # Botão Fechar
         close_btn = ctk.CTkButton(
@@ -763,6 +677,6 @@ def abrir_janela_visualizacao(main_app, df=None, file_path=None):
         traceback.print_exc()
 
 if __name__ == "__main__":
-    print("Script executado diretamente - gerando arquivo Excel")
-    df, filepath = gerar_update_cards()
-    print(f"Concluído! {len(df)} registros salvos em {filepath}")
+    print("Script executado diretamente - carregando dados em memoria")
+    df = gerar_update_cards()
+    print(f"Concluido! {len(df)} registros carregados")

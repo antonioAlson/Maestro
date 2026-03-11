@@ -13,7 +13,7 @@ from scripts.data_update import update_dates
 class SidebarApp:
     def __init__(self, root):
         self.root = root
-        self.root.title("Home")
+        self.root.title("Maestro")
         self.root.geometry("1000x500")
         self.set_window_icon()
         # Configurar tema
@@ -320,44 +320,56 @@ class SidebarApp:
         self.set_active_menu_button("pcp")
         self.clear_content()
         
-        # Card de conteúdo
-        card = ctk.CTkFrame(self.dynamic_content, corner_radius=10)
+        # Card principal da tela PCP
+        card = ctk.CTkFrame(self.dynamic_content, corner_radius=12, fg_color="#2b2b2b")
         card.pack(fill="both", expand=True, padx=20, pady=10)
         
-        # Cabeçalho da área PCP
+        # Cabecalho da area PCP
         header_frame = ctk.CTkFrame(card, fg_color="transparent")
-        header_frame.pack(fill="x", padx=30, pady=(24, 8))
+        header_frame.pack(fill="x", padx=26, pady=(22, 6))
 
         title_text = "  PCP"
         title_label = ctk.CTkLabel(
             header_frame,
             text=title_text,
-            font=ctk.CTkFont(size=24, weight="bold"),
+            font=ctk.CTkFont(size=26, weight="bold"),
             image=self.images.get("pcp"),
             compound="left"
         )
         title_label.pack(anchor="w")
+
+        subtitle_label = ctk.CTkLabel(
+            header_frame,
+            text="Selecione uma rotina para iniciar o processamento.",
+            font=ctk.CTkFont(size=13),
+            text_color="gray75"
+        )
+        subtitle_label.pack(anchor="w", pady=(4, 0))
+
+        divider = ctk.CTkFrame(card, height=1, corner_radius=0, fg_color="#3a3a3a")
+        divider.pack(fill="x", padx=26, pady=(8, 10))
         
-        # Container de ações
-        actions_frame = ctk.CTkFrame(card, corner_radius=12, fg_color="#2f2f2f")
-        actions_frame.pack(fill="both", expand=True, padx=30, pady=(8, 24))
+        # Container de acoes
+        actions_frame = ctk.CTkFrame(card, corner_radius=12, fg_color="#323232")
+        actions_frame.pack(fill="both", expand=True, padx=26, pady=(0, 22))
 
         actions_title = ctk.CTkLabel(
             actions_frame,
             text="Ações PCP",
-            font=ctk.CTkFont(size=15, weight="bold"),
+            font=ctk.CTkFont(size=16, weight="bold"),
             text_color="gray85"
         )
-        actions_title.pack(anchor="w", padx=18, pady=(14, 8))
+        actions_title.pack(anchor="w", padx=18, pady=(14, 4))
 
         buttons_container = ctk.CTkFrame(actions_frame, fg_color="transparent")
-        buttons_container.pack(fill="both", expand=True, padx=14, pady=(4, 14))
+        buttons_container.pack(fill="x", padx=14, pady=(0, 14))
 
-        # Grid responsivo 2x2
-        buttons_container.grid_columnconfigure((0, 1), weight=1, uniform="pcp_col")
-        buttons_container.grid_rowconfigure((0, 1), weight=1)
+        # Grid 2x2 com botoes uniformes e altura controlada
+        buttons_container.grid_columnconfigure(0, weight=1, uniform="pcp_col")
+        buttons_container.grid_columnconfigure(1, weight=1, uniform="pcp_col")
+        buttons_container.grid_rowconfigure((0, 1), weight=0)
         
-        # Definir botões
+        # Definir botoes
         button_names = [
             "Gerar Relatório",
             "Adicionar Datas",
@@ -365,21 +377,21 @@ class SidebarApp:
             "Imprimir OPs"
         ]
         
-        # Criar botões em grade 2x2 (2 colunas, 2 linhas)
+        # Criar botoes em grade 2x2 (2 colunas, 2 linhas)
         for i, btn_name in enumerate(button_names):
             row = i // 2
             col = i % 2
             btn = ctk.CTkButton(
                 buttons_container,
                 text=btn_name,
-                height=35,
+                height=42,
                 font=ctk.CTkFont(size=13, weight="bold"),
                 corner_radius=8,
                 fg_color="#1f6aa5",
                 hover_color="#2f7dc2",
                 command=lambda name=btn_name: self.pcp_routine_action(name)
             )
-            btn.grid(row=row, column=col, padx=8, pady=8, sticky="nsew")
+            btn.grid(row=row, column=col, padx=6, pady=6, sticky="ew")
     
     def show_loading_popup(self, message="Processando..."):
         """Mostra popup de carregamento centralizado"""
@@ -1068,17 +1080,15 @@ class SidebarApp:
         
         def execute():
             try:
-                print("Gerando arquivo update_cards.xlsx...")
+                print("Carregando dados de update em memoria...")
                 # Chamar a função diretamente (não via subprocess)
-                df, file_path = update_dates.gerar_update_cards()
-                print(f"Arquivo gerado com sucesso: {file_path}")
+                df = update_dates.gerar_update_cards()
                 print(f"DataFrame com {len(df)} linhas")
             except Exception as e:
                 print(f"Erro ao gerar arquivo: {e}")
                 import traceback
                 traceback.print_exc()
                 df = None
-                file_path = None
             finally:
                 # Parar simulação, completar progresso
                 self.script_running = False
@@ -1088,7 +1098,7 @@ class SidebarApp:
                 if df is not None:
                     print(f"Abrindo visualização de dados com DataFrame ({len(df)} linhas)...")
                     self.root.after(200, lambda: self.close_loading_popup())
-                    self.root.after(300, lambda: update_dates.abrir_janela_visualizacao(self, df=df, file_path=file_path))
+                    self.root.after(300, lambda: update_dates.abrir_janela_visualizacao(self, df=df))
                 else:
                     print("Erro ao gerar dados")
                     self.root.after(200, lambda: self.close_loading_popup())

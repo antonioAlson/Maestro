@@ -372,14 +372,14 @@ class SidebarApp:
             btn = ctk.CTkButton(
                 buttons_container,
                 text=btn_name,
-                height=45,
-                font=ctk.CTkFont(size=14, weight="bold"),
-                corner_radius=10,
+                height=35,
+                font=ctk.CTkFont(size=13, weight="bold"),
+                corner_radius=8,
                 fg_color="#1f6aa5",
                 hover_color="#2f7dc2",
                 command=lambda name=btn_name: self.pcp_routine_action(name)
             )
-            btn.grid(row=row, column=col, padx=10, pady=10, sticky="nsew")
+            btn.grid(row=row, column=col, padx=8, pady=8, sticky="nsew")
     
     def show_loading_popup(self, message="Processando..."):
         """Mostra popup de carregamento centralizado"""
@@ -1054,6 +1054,56 @@ class SidebarApp:
             self.loading_popup.destroy()
             self.loading_popup = None
     
+    def run_update_dates_with_loading(self):
+        """Executa a função gerar_update_cards diretamente e abre visualização"""
+        self.script_running = True
+        
+        def simulate_progress():
+            """Simula progresso enquanto o script está rodando"""
+            progress = 0
+            while self.script_running and progress < 0.95:
+                progress += 0.10  # Incremento maior para barra mais rápida
+                self.root.after(0, lambda p=progress: self.update_progress(p))
+                threading.Event().wait(0.1)  # Intervalo menor para resposta mais rápida
+        
+        def execute():
+            try:
+                print("Gerando arquivo update_cards.xlsx...")
+                # Chamar a função diretamente (não via subprocess)
+                df, file_path = update_dates.gerar_update_cards()
+                print(f"Arquivo gerado com sucesso: {file_path}")
+                print(f"DataFrame com {len(df)} linhas")
+            except Exception as e:
+                print(f"Erro ao gerar arquivo: {e}")
+                import traceback
+                traceback.print_exc()
+                df = None
+                file_path = None
+            finally:
+                # Parar simulação, completar progresso
+                self.script_running = False
+                self.root.after(0, lambda: self.update_progress(1.0))
+                
+                # Abrir visualização passando o DataFrame diretamente
+                if df is not None:
+                    print(f"Abrindo visualização de dados com DataFrame ({len(df)} linhas)...")
+                    self.root.after(200, lambda: self.close_loading_popup())
+                    self.root.after(300, lambda: update_dates.abrir_janela_visualizacao(self, df=df, file_path=file_path))
+                else:
+                    print("Erro ao gerar dados")
+                    self.root.after(200, lambda: self.close_loading_popup())
+        
+        # Mostrar popup e iniciar execução em thread separada
+        self.show_loading_popup("Gerando relatório de datas...")
+        
+        # Iniciar thread de execução
+        exec_thread = threading.Thread(target=execute, daemon=True)
+        exec_thread.start()
+        
+        # Iniciar thread de simulação de progresso
+        progress_thread = threading.Thread(target=simulate_progress, daemon=True)
+        progress_thread.start()
+    
     def run_script_with_loading(self, script_path, script_name, output_file=None):
         """Executa script em thread separada com popup de carregamento"""
         self.script_running = True
@@ -1062,9 +1112,9 @@ class SidebarApp:
             """Simula progresso enquanto o script está rodando"""
             progress = 0
             while self.script_running and progress < 0.95:
-                progress += 0.05
+                progress += 0.10  # Incremento maior para barra mais rápida
                 self.root.after(0, lambda p=progress: self.update_progress(p))
-                threading.Event().wait(0.3)  # Atualizar a cada 300ms
+                threading.Event().wait(0.1)  # Intervalo menor para resposta mais rápida
         
         def execute():
             try:
@@ -1088,10 +1138,6 @@ class SidebarApp:
                 
                 # Se for "Adicionar Datas", abrir diretamente a visualização
                 if script_name == "Adicionar Datas" and output_file:
-                    # Aguardar um pouco para garantir que o arquivo foi criado
-                    import time
-                    time.sleep(0.5)
-                    
                     # Verificar se o arquivo foi gerado
                     print(f"Verificando se arquivo existe: {output_file}")
                     print(f"Arquivo existe: {os.path.exists(output_file)}")
@@ -1114,14 +1160,19 @@ class SidebarApp:
                     
                     if found_file:
                         print("Abrindo visualização de dados...")
-                        self.root.after(500, lambda: self.close_loading_popup())
-                        self.root.after(600, lambda: update_dates.abrir_janela_visualizacao(self))
+                        self.root.after(200, lambda: self.close_loading_popup())
+                        try:
+                            self.root.after(300, lambda: update_dates.abrir_janela_visualizacao(self))
+                        except Exception as e:
+                            print(f"Erro ao abrir janela de visualização: {e}")
+                            import traceback
+                            traceback.print_exc()
                     else:
                         print(f"Arquivo não encontrado em nenhum dos caminhos tentados")
-                        self.root.after(500, lambda: self.show_success_message(script_name, output_file))
+                        self.root.after(200, lambda: self.show_success_message(script_name, output_file))
                 else:
                     # Para outros scripts, mostrar mensagem de sucesso
-                    self.root.after(500, lambda: self.show_success_message(script_name, output_file))
+                    self.root.after(200, lambda: self.show_success_message(script_name, output_file))
         
         # Mostrar popup e iniciar execução em thread separada
         self.show_loading_popup(f"Executando {script_name}...")
@@ -1145,10 +1196,8 @@ class SidebarApp:
             self.run_script_with_loading(script_path, "Gerar Relatório", output_file)
         
         elif routine_name == "Adicionar Datas":
-            # Executar o script update_dates.py para gerar update_cards.xlsx
-            script_path = os.path.join("scripts", "data_update", "update_dates.py")
-            output_file = os.path.join("src", "data_update", "update_cards.xlsx")
-            self.run_script_with_loading(script_path, "Adicionar Datas", output_file)
+            # Executar função diretamente ao invés de subprocess
+            self.run_update_dates_with_loading()
         
         # Adicione aqui a lógica específica para outras rotinas
     

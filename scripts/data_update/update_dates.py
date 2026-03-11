@@ -22,8 +22,8 @@ JIRA_URL = os.getenv("JIRA_URL")
 EMAIL = os.getenv("EMAIL")
 API_TOKEN = os.getenv("API_TOKEN")
 
-# FILTRO JQL - mesma query do generate_archives
-jql = '(project = MANTA AND status IN ("A Produzir", "Liberado Engenharia")) OR (project = TENSYLON AND status IN ("A Produzir", "Liberado Engenharia", "Aguardando Acabamento", "Aguardando Autoclave", "Aguardando Corte", "Aguardando montagem"))'
+# FILTRO JQL - buscar apenas cartões SEM data de previsão de entrega
+jql = '((project = MANTA AND status IN ("A Produzir", "Liberado Engenharia")) OR (project = TENSYLON AND status IN ("A Produzir", "Liberado Engenharia", "Aguardando Acabamento", "Aguardando Autoclave", "Aguardando Corte", "Aguardando montagem"))) AND customfield_10245 is EMPTY'
 
 url = f"{JIRA_URL}/rest/api/3/search/jql"
 
@@ -149,27 +149,34 @@ def gerar_update_cards():
 
         next_page = data.get("nextPageToken")
 
-    print(f"Total de cartões: {len(all_rows)}")
+    print(f"Total de cartões sem previsão de entrega: {len(all_rows)}")
 
     # Criar DataFrame
-    df = pd.DataFrame(all_rows)
-
-    # Filtrar cartões sem previsão de entrega
-    cards_sem_previsao = df[df["DT. PREVISÃO ENTREGA"].isna() | (df["DT. PREVISÃO ENTREGA"] == "")]
-
-    print(f"Cartões sem previsão de entrega: {len(cards_sem_previsao)}")
-
-    # Selecionar apenas as colunas desejadas
-    cards_update = cards_sem_previsao[[
-        "ID",
-        "Tipo de issue",
-        "Chave",
-        "Resumo",
-        "Status",
-        "SITUAÇÃO",
-        "Veículo",
-        "DT. PREVISÃO ENTREGA"
-    ]]
+    if len(all_rows) == 0:
+        # Se não há dados, criar DataFrame vazio com as colunas corretas
+        cards_update = pd.DataFrame(columns=[
+            "ID",
+            "Tipo de issue",
+            "Chave",
+            "Resumo",
+            "Status",
+            "SITUAÇÃO",
+            "Veículo",
+            "DT. PREVISÃO ENTREGA"
+        ])
+    else:
+        df = pd.DataFrame(all_rows)
+        # Selecionar apenas as colunas desejadas
+        cards_update = df[[
+            "ID",
+            "Tipo de issue",
+            "Chave",
+            "Resumo",
+            "Status",
+            "SITUAÇÃO",
+            "Veículo",
+            "DT. PREVISÃO ENTREGA"
+        ]]
 
     # Criar diretórios se não existirem
     os.makedirs(".\\src\\data_update", exist_ok=True)
@@ -182,14 +189,12 @@ def gerar_update_cards():
     wb_update = load_workbook(update_filename)
     ws_update = wb_update.active
 
-    # Criar lista de links apenas para cards sem previsão
-    links_sem_previsao = cards_sem_previsao["Chave"].tolist()
-
     # Adicionar hyperlinks (começando da linha 2, pulando o cabeçalho)
-    for idx, link in enumerate(links_sem_previsao, start=2):
-        cell = ws_update[f'C{idx}']  # Coluna C é a coluna "Chave"
-        cell.hyperlink = link
-        cell.style = "Hyperlink"
+    if len(all_links) > 0:
+        for idx, link in enumerate(all_links, start=2):
+            cell = ws_update[f'C{idx}']  # Coluna C é a coluna "Chave"
+            cell.hyperlink = link
+            cell.style = "Hyperlink"
 
     # Ajustar largura da coluna SITUAÇÃO (coluna F) para 80px (aproximadamente 11 unidades)
     ws_update.column_dimensions['F'].width = 11
@@ -197,7 +202,9 @@ def gerar_update_cards():
     wb_update.save(update_filename)
     
     print(f"Arquivo {update_filename} criado com sucesso!")
-    return update_filename
+    
+    # Retornar o DataFrame e o caminho do arquivo
+    return cards_update, update_filename
 
 # ============================================================================
 # FUNÇÕES PARA SALVAR E ATUALIZAR JIRA
@@ -467,23 +474,37 @@ def abrir_arquivo_excel(file_path):
 # FUNÇÃO PARA ABRIR JANELA DE VISUALIZAÇÃO
 # ============================================================================
 
-def abrir_janela_visualizacao(main_app):
-    """Abre janela de visualização dos dados do Excel"""
-    file_path = ".\\src\\data_update\\update_cards.xlsx"
+def abrir_janela_visualizacao(main_app, df=None, file_path=None):
+    """Abre janela de visualização dos dados do Excel
+    Args:
+        main_app: Instância do app principal
+        df: DataFrame opcional com os dados (evita leitura do arquivo)
+        file_path: Caminho do arquivo Excel (usado se df não for fornecido)
+    """
+    if file_path is None:
+        file_path = ".\\src\\data_update\\update_cards.xlsx"
     
     try:
-        print(f"Iniciando visualização de dados: {file_path}")
+        print(f"Iniciando visualização de dados...")
         
-        # Ler arquivo Excel
-        df = pd.read_excel(file_path)
-        print(f"Arquivo lido com sucesso. {len(df)} linhas encontradas")
+        # Se DataFrame não foi fornecido, ler do arquivo
+        if df is None:
+            print(f"Lendo arquivo: {file_path}")
+            df = pd.read_excel(file_path)
+        else:
+            print(f"Usando DataFrame fornecido")
+            
+        print(f"{len(df)} linhas encontradas")
         
         # Verificar se há dados
         if len(df) == 0:
-            print("Nenhum item encontrado no arquivo")
+            print("Nenhum item encontrado")
             # Criar janela com mensagem de aviso
+            title = "Visualização de Dados"
+            if file_path:
+                title += " - " + os.path.basename(file_path)
             excel_window = ctk.CTkToplevel(main_app.root)
-            excel_window.title("Visualização de Dados - " + os.path.basename(file_path))
+            excel_window.title(title)
             excel_window.geometry("900x500")
             
             # Centralizar a janela
@@ -572,8 +593,11 @@ def abrir_janela_visualizacao(main_app):
         print("Criando nova janela...")
         
         # Criar nova janela
+        title = "Visualização de Dados"
+        if file_path:
+            title += " - " + os.path.basename(file_path)
         excel_window = ctk.CTkToplevel(main_app.root)
-        excel_window.title("Visualização de Dados - " + os.path.basename(file_path))
+        excel_window.title(title)
         excel_window.geometry("900x500")
         
         # Centralizar a nova janela
@@ -740,4 +764,5 @@ def abrir_janela_visualizacao(main_app):
 
 if __name__ == "__main__":
     print("Script executado diretamente - gerando arquivo Excel")
-    gerar_update_cards()
+    df, filepath = gerar_update_cards()
+    print(f"Concluído! {len(df)} registros salvos em {filepath}")

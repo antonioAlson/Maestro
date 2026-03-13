@@ -6,6 +6,7 @@ import threading
 import re
 import sys
 import tkinter as tk
+from datetime import datetime
 
 # Importar módulo update_dates
 from scripts.data_update import update_dates
@@ -374,7 +375,7 @@ class SidebarApp:
         button_names = [
             "Gerar Relatório",
             "Adicionar Datas",
-            "Reprogramar Atrasos",
+            "Reprogramar CONTEC",
             "Imprimir OS"
         ]
         
@@ -1410,6 +1411,98 @@ class SidebarApp:
         popup.protocol("WM_DELETE_WINDOW", on_cancel)
         self.root.wait_window(popup)
         return result["card_ids"]
+
+    def request_target_date_for_contec(self):
+        """Solicita a data de previsão para atualização dos cards do CONTEC."""
+        popup = ctk.CTkToplevel(self.root)
+        popup.title("Reprogramar CONTEC")
+        popup.geometry("420x190")
+        popup.resizable(False, False)
+        popup.transient(self.root)
+        popup.grab_set()
+
+        self.root.update_idletasks()
+        root_x = self.root.winfo_x()
+        root_y = self.root.winfo_y()
+        root_width = self.root.winfo_width()
+        root_height = self.root.winfo_height()
+        popup_width = 420
+        popup_height = 190
+        x = root_x + (root_width - popup_width) // 2
+        y = root_y + (root_height - popup_height) // 2
+        popup.geometry(f"{popup_width}x{popup_height}+{x}+{y}")
+
+        label = ctk.CTkLabel(
+            popup,
+            text="Informe a nova data de previsão (DD/MM/AAAA ou AAAA-MM-DD):",
+            font=ctk.CTkFont(size=13, weight="bold")
+        )
+        label.pack(anchor="w", padx=16, pady=(16, 8))
+
+        date_entry = ctk.CTkEntry(popup, height=36)
+        date_entry.pack(fill="x", padx=16)
+        date_entry.focus_set()
+
+        helper = ctk.CTkLabel(
+            popup,
+            text="Exemplo: 25/03/2026",
+            font=ctk.CTkFont(size=11),
+            text_color="gray70"
+        )
+        helper.pack(anchor="w", padx=16, pady=(6, 0))
+
+        buttons_frame = ctk.CTkFrame(popup, fg_color="transparent")
+        buttons_frame.pack(fill="x", padx=16, pady=14)
+
+        result = {"date": None}
+
+        def parse_date_to_iso(raw_date):
+            raw_date = raw_date.strip()
+            if not raw_date:
+                return None
+
+            accepted_formats = ["%d/%m/%Y", "%Y-%m-%d", "%d-%m-%Y"]
+            for fmt in accepted_formats:
+                try:
+                    return datetime.strptime(raw_date, fmt).strftime("%Y-%m-%d")
+                except ValueError:
+                    continue
+            return None
+
+        def on_confirm():
+            raw_date = date_entry.get().strip()
+            parsed_date = parse_date_to_iso(raw_date)
+            if not parsed_date:
+                print("Data inválida para Reprogramar CONTEC. Use DD/MM/AAAA ou AAAA-MM-DD.")
+                return
+            result["date"] = parsed_date
+            popup.destroy()
+
+        def on_cancel():
+            result["date"] = None
+            popup.destroy()
+
+        cancel_btn = ctk.CTkButton(
+            buttons_frame,
+            text="Cancelar",
+            command=on_cancel,
+            width=110,
+            fg_color="gray40",
+            hover_color="gray50"
+        )
+        cancel_btn.pack(side="right")
+
+        confirm_btn = ctk.CTkButton(
+            buttons_frame,
+            text="Confirmar",
+            command=on_confirm,
+            width=110
+        )
+        confirm_btn.pack(side="right", padx=(0, 8))
+
+        popup.protocol("WM_DELETE_WINDOW", on_cancel)
+        self.root.wait_window(popup)
+        return result["date"]
     
     def pcp_routine_action(self, routine_name):
         """Ação executada ao clicar em uma rotina PCP"""
@@ -1428,6 +1521,41 @@ class SidebarApp:
         elif routine_name == "Adicionar Datas":
             # Executar função diretamente ao invés de subprocess
             self.run_update_dates_with_loading()
+
+        elif routine_name == "Reprogramar CONTEC":
+            # Solicitar IDs e data antes de executar script de reprogramação CONTEC
+            card_ids_to_update = self.request_card_ids_to_print()
+            print(f"IDs retornados para Reprogramar CONTEC: {card_ids_to_update}")
+
+            if not card_ids_to_update:
+                print("Execução cancelada: nenhum ID informado para Reprogramar CONTEC.")
+                return
+
+            target_date = self.request_target_date_for_contec()
+            print(f"Data retornada para Reprogramar CONTEC: {target_date}")
+
+            if not target_date:
+                print("Execução cancelada: nenhuma data válida informada para Reprogramar CONTEC.")
+                return
+
+            script_candidates = [
+                os.path.join("scripts", "data_update", "update_contec.py"),
+                os.path.join("scripts", "data_update", "uptade_contec.py")
+            ]
+            script_path = next((path for path in script_candidates if os.path.exists(path)), None)
+
+            if not script_path:
+                print("Script de reprogramação CONTEC não encontrado.")
+                print("Caminhos esperados:")
+                for candidate in script_candidates:
+                    print(f"  - {candidate}")
+                return
+
+            self.run_script_with_loading(
+                script_path,
+                "Reprogramar CONTEC",
+                script_args=["--ids", ",".join(card_ids_to_update), "--date", target_date]
+            )
 
         elif routine_name == "Imprimir OS":
             print("\n" + "="*60)
@@ -1456,6 +1584,7 @@ class SidebarApp:
             print("Rotinas disponíveis:")
             print("  - Gerar Relatório")
             print("  - Adicionar Datas")
+            print("  - Reprogramar CONTEC")
             print("  - Imprimir OS")
         
         # Adicione aqui a lógica específica para outras rotinas

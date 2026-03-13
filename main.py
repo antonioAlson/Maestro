@@ -399,7 +399,7 @@ class SidebarApp:
         """Mostra popup de carregamento centralizado"""
         self.loading_popup = ctk.CTkToplevel(self.root)
         self.loading_popup.title("Aguarde")
-        self.loading_popup.geometry("550x400")
+        self.loading_popup.geometry("550x240")
         self.loading_popup.resizable(False, False)
         
         # Centralizar baseado na janela principal
@@ -416,7 +416,7 @@ class SidebarApp:
         root_height = self.root.winfo_height()
         
         popup_width = 550
-        popup_height = 400
+        popup_height = 240
         
         x = root_x + (root_width - popup_width) // 2
         y = root_y + (root_height - popup_height) // 2

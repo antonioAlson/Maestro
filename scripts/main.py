@@ -21,7 +21,7 @@ import tkinter as tk
 from datetime import datetime
 
 # Importar módulo update_dates
-from data_update import update_dates, add_dates
+from pcp.data_update import update_dates, add_dates
 
 
 class SidebarApp:
@@ -1624,7 +1624,7 @@ class SidebarApp:
         
         if routine_name == "Gerar Relatório":
             # Executar o script jira_cards.py com popup de carregamento
-            script_path = os.path.join("scripts", "jira_cards", "jira_cards.py")
+            script_path = os.path.join("scripts", "pcp", "jira_cards", "jira_cards.py")
             output_file = os.path.join("src", "temp", "jira_cards", "relatorios")
             os.makedirs(output_file, exist_ok=True)
             self.run_script_with_loading(script_path, "Gerar Relatório", output_file)
@@ -1649,7 +1649,7 @@ class SidebarApp:
                 print("Execução cancelada: nenhuma data válida informada para Reprogramar OPs.")
                 return
 
-            script_path = os.path.join("scripts", "data_update", "update_contec.py")
+            script_path = os.path.join("scripts", "pcp", "data_update", "update_contec.py")
 
             if not os.path.exists(script_path):
                 print("Script de reprogramação OS não encontrado.")
@@ -1674,7 +1674,7 @@ class SidebarApp:
                 print("Execução cancelada: nenhum ID informado.")
                 return
 
-            script_path = os.path.join("scripts", "download_ops", "download_ops")
+            script_path = os.path.join("scripts", "pcp", "download_ops", "download_ops")
             print(f"Caminho do script: {script_path}")
             print(f"Script existe? {os.path.exists(script_path)}")
             
@@ -1690,7 +1690,7 @@ class SidebarApp:
             print("="*60)
             
             # Executar script de impressão em massa de PDFs
-            script_path = os.path.join("scripts", "download_ops", "print_ops.py")
+            script_path = os.path.join("scripts", "pcp", "download_ops", "print_ops.py")
             print(f"Caminho do script: {script_path}")
             print(f"Script existe? {os.path.exists(script_path)}")
             

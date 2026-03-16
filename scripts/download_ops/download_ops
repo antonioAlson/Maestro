@@ -230,7 +230,6 @@ print(f"✅ Baixados: {pdfs_baixados}/{len(typed_codes)}")
 if pdfs_erro > 0:
     print(f"❌ Erros/Ignorados: {pdfs_erro}")
 print(f"💾 Total: {total_mb_final:.2f} MB")
-print(f"📁 Pasta: {os.path.abspath(PASTA_PDFS)}")
 if zip_path:
     print(f"📦 ZIP: {os.path.abspath(zip_path)}")
 print(f"📄 Log: {os.path.abspath(log_file_path)}")

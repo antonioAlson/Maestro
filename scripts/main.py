@@ -110,7 +110,7 @@ class SidebarApp:
         # Mapeamento de ícones
         image_files = {
             "home": "home.png",
-            "dashboard": "dashboard.png",
+            "project": "project.png",
             "pcp": "pcp.png",
             "settings": "settings.png",
             "exit": "exit.png"
@@ -161,8 +161,8 @@ class SidebarApp:
         # Itens do menu principal (imagem_key, texto, comando)
         menu_items = [
             ("home", "Home", self.home_action),
-            ("dashboard", "Dashboard", self.dashboard_action),
             ("pcp", "PCP", self.pcp_action),
+            ("project", "Projetos", self.project_action),
             ("settings", "Configurações", self.settings_action),
         ]
         
@@ -324,14 +324,118 @@ class SidebarApp:
         )
         subtitle.pack(pady=(15, 0))
     
-    def dashboard_action(self):
-        self.set_active_menu_button("dashboard")
-        self.show_content(
-            "Dashboard",
-            "Dashboard com métricas e estatísticas importantes do sistema.",
-            title_anchor="w",
-            title_img=self.images.get("dashboard")
+    def project_action(self):
+        """Mostra conteúdo de Projetos com layout similar ao PCP"""
+        self.set_active_menu_button("project")
+        self.clear_content()
+        
+        # Card principal da tela Projetos
+        card = ctk.CTkFrame(self.dynamic_content, corner_radius=12, fg_color="#2b2b2b")
+        card.pack(fill="both", expand=True, padx=20, pady=10)
+        
+        # Cabeçalho da área Projetos
+        header_frame = ctk.CTkFrame(card, fg_color="transparent")
+        header_frame.pack(fill="x", padx=26, pady=(22, 6))
+
+        title_text = "  Projetos"
+        title_label = ctk.CTkLabel(
+            header_frame,
+            text=title_text,
+            font=ctk.CTkFont(size=26, weight="bold"),
+            image=self.images.get("project"),
+            compound="left"
         )
+        title_label.pack(anchor="w")
+
+        subtitle_label = ctk.CTkLabel(
+            header_frame,
+            text="Gerenciamento de projetos e estatísticas importantes do sistema.",
+            font=ctk.CTkFont(size=13),
+            text_color="gray75"
+        )
+        subtitle_label.pack(anchor="w", pady=(4, 0))
+
+        divider = ctk.CTkFrame(card, height=1, corner_radius=0, fg_color="#3a3a3a")
+        divider.pack(fill="x", padx=26, pady=(8, 10))
+        
+        # Container principal de conteúdo
+        content_container = ctk.CTkFrame(card, fg_color="transparent")
+        content_container.pack(fill="both", expand=True, padx=26, pady=(0, 22))
+        
+        # Configurar grid para alinhamento vertical das seções
+        content_container.grid_rowconfigure(0, weight=1)
+        content_container.grid_rowconfigure(1, weight=1)
+        content_container.grid_columnconfigure(0, weight=1)
+        
+        # ========== SEÇÃO ROTINAS PROJETOS ==========
+        rotinas_frame = ctk.CTkFrame(content_container, corner_radius=12, fg_color="#323232")
+        rotinas_frame.grid(row=0, column=0, sticky="new", pady=(0, 12))
+
+        rotinas_title = ctk.CTkLabel(
+            rotinas_frame,
+            text="Rotinas PCP",
+            font=ctk.CTkFont(size=16, weight="bold"),
+            text_color="gray85"
+        )
+        rotinas_title.pack(anchor="w", padx=18, pady=(14, 4))
+
+        rotinas_buttons_container = ctk.CTkFrame(rotinas_frame, fg_color="transparent")
+        rotinas_buttons_container.pack(fill="x", padx=14, pady=(0, 14))
+
+        # Grid 2 colunas para rotinas
+        rotinas_buttons_container.grid_columnconfigure(0, weight=1, uniform="proj_btn_col")
+        rotinas_buttons_container.grid_columnconfigure(1, weight=1, uniform="proj_btn_col")
+        
+        # Botão único - Criar Espelhos
+        btn = ctk.CTkButton(
+            rotinas_buttons_container,
+            text="Criar Espelhos",
+            height=42,
+            font=ctk.CTkFont(size=13, weight="bold"),
+            corner_radius=8,
+            fg_color="#1f6aa5",
+            hover_color="#2f7dc2"
+        )
+        btn.grid(row=0, column=0, padx=6, pady=6, sticky="ew")
+        
+        # ========== SEÇÃO RELATÓRIOS ==========
+        relatorios_frame = ctk.CTkFrame(content_container, corner_radius=12, fg_color="#323232")
+        relatorios_frame.grid(row=1, column=0, sticky="new", pady=(0, 0))
+
+        relatorios_title = ctk.CTkLabel(
+            relatorios_frame,
+            text="Relatórios",
+            font=ctk.CTkFont(size=16, weight="bold"),
+            text_color="gray85"
+        )
+        relatorios_title.pack(anchor="w", padx=18, pady=(14, 4))
+
+        relatorios_buttons_container = ctk.CTkFrame(relatorios_frame, fg_color="transparent")
+        relatorios_buttons_container.pack(fill="x", padx=14, pady=(0, 14))
+
+        # Grid 2 colunas para relatórios
+        relatorios_buttons_container.grid_columnconfigure(0, weight=1, uniform="proj_btn_col")
+        relatorios_buttons_container.grid_columnconfigure(1, weight=1, uniform="proj_btn_col")
+        
+        # Definir botões de relatórios
+        relatorios_buttons = [
+            "Gerar Relatório"
+        ]
+        
+        # Criar botões de relatórios
+        for i, btn_name in enumerate(relatorios_buttons):
+            row = i // 2
+            col = i % 2
+            btn = ctk.CTkButton(
+                relatorios_buttons_container,
+                text=btn_name,
+                height=42,
+                font=ctk.CTkFont(size=13, weight="bold"),
+                corner_radius=8,
+                fg_color="#2a9d2a",
+                hover_color="#238a23"
+            )
+            btn.grid(row=row, column=col, padx=6, pady=6, sticky="ew")
     
     def pcp_action(self):
         """Mostra conteúdo PCP com layout organizado e ações em grade"""

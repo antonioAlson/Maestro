@@ -9,7 +9,7 @@ import tkinter as tk
 from datetime import datetime
 
 # Importar módulo update_dates
-from scripts.data_update import update_dates
+from data_update import update_dates
 
 
 class SidebarApp:
@@ -1513,8 +1513,8 @@ class SidebarApp:
         print(f">>> Comparação com 'Imprimir OS': {routine_name == 'Imprimir OS'}")
         
         if routine_name == "Gerar Relatório":
-            # Executar o script new_archive.py com popup de carregamento
-            script_path = os.path.join("scripts", "new_archive.py")
+            # Executar o script jira_cards.py com popup de carregamento
+            script_path = os.path.join("scripts", "jira_cards.py")
             output_file = os.path.join("src", "temp", "jira_cards")
             os.makedirs(output_file, exist_ok=True)
             self.run_script_with_loading(script_path, "Gerar Relatório", output_file)
